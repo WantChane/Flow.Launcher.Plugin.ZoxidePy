@@ -1,21 +1,19 @@
 import sys
 from pathlib import Path
 from typing import List
-
-from lib.pyflowlauncher.api import copy_to_clipboard
-from lib.pyflowlauncher.icons import COPY, RECYCLEBIN
-
-plugindir = Path.absolute(Path(__file__).parent)
-paths = (".", "lib", "plugin")
-sys.path = [str(plugindir / p) for p in paths] + sys.path
-
-from pyflowlauncher import Plugin, Result, send_results
-from pyflowlauncher.result import ResultResponse
-from pyflowlauncher.icons import FOLDER
 import subprocess
 import re
 import os
 import logging
+
+from lib.pyflowlauncher import Plugin, Result, send_results
+from lib.pyflowlauncher.result import ResultResponse
+from lib.pyflowlauncher.api import copy_to_clipboard
+from lib.pyflowlauncher.icons import FOLDER, COPY, RECYCLEBIN
+
+plugindir = Path.absolute(Path(__file__).parent)
+paths = (".", "lib", "plugin")
+sys.path = [str(plugindir / p) for p in paths] + sys.path
 
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(module)s.%(funcName)s: %(message)s"
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
