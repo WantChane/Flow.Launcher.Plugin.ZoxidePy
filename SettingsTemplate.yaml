@@ -1,0 +1,7 @@
+body:
+  - type: inputWithFileBtn
+    attributes:
+      name: zoxide_path
+      label: Zoxide Executable Directory
+      description: Location of zoxide.exe
+      defaultValue: zoxide.exe
