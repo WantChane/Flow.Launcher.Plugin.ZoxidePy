@@ -6,10 +6,10 @@ import re
 import os
 import logging
 
-from lib.pyflowlauncher import Plugin, Result, send_results
-from lib.pyflowlauncher.result import ResultResponse
-from lib.pyflowlauncher.api import copy_to_clipboard
-from lib.pyflowlauncher.icons import FOLDER, COPY, RECYCLEBIN
+from pyflowlauncher import Plugin, Result, send_results
+from pyflowlauncher.result import ResultResponse
+from pyflowlauncher.api import copy_to_clipboard
+from pyflowlauncher.icons import FOLDER, COPY, RECYCLEBIN
 
 plugindir = Path.absolute(Path(__file__).parent)
 paths = (".", "lib", "plugin")
