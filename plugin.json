@@ -4,7 +4,7 @@
     "Name": "ZoxidePy",
     "Description": "Zoxide integration for Flow Launcher, written in Python.",
     "Author": "WantChane",
-    "Version": "1.0.0",
+    "Version": "1.1.0",
     "Language": "python",
     "Website": "https://github.com/WantChane/Flow.Launcher.Plugin.ZoxidePy",
     "IcoPath": "app.png",
