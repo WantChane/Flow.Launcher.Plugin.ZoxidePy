@@ -34,32 +34,13 @@ plugin = Plugin()
 
 @plugin.on_method
 def query(query: str) -> ResultResponse:
-    zoxide_path = _get_zoxide_path()
-
     if not query.strip():
         return send_results([])
 
-    results = _zoxide_query(query, zoxide_path)
-    if not results:
-        return send_results([])
-
-    flow_results = []
-    for result in results:
-        flow_results.append(
-            Result(
-                Title=Path(result.path).name,
-                SubTitle=f"Path: {result.path}",
-                IcoPath=FOLDER,
-                JsonRPCAction={
-                    "method": "open_directory",
-                    "parameters": [result.path, zoxide_path],
-                },
-                Score=result.score,
-                ContextData=result.path,
-            )
-        )
-
-    return send_results(flow_results)
+    if query.startswith("cd "):
+        return _plugin_query_cd(query[3:].strip())
+    else:
+        return _plugin_query_open(query)
 
 
 @plugin.on_method
@@ -212,6 +193,60 @@ def _zoxide_remove(path: str, zoxide_path: str) -> bool:
     except Exception as e:
         logger.error("Exception in zoxide_remove: %s", str(e))
         return False
+
+
+def _plugin_query_open(query: str) -> ResultResponse:
+    zoxide_path = _get_zoxide_path()
+
+    results = _zoxide_query(query, zoxide_path)
+    if not results:
+        return send_results([])
+
+    flow_results = []
+    for result in results:
+        flow_results.append(
+            Result(
+                Title=Path(result.path).name,
+                SubTitle=f"Path: {result.path}",
+                IcoPath=FOLDER,
+                JsonRPCAction={
+                    "method": "open_directory",
+                    "parameters": [result.path, zoxide_path],
+                },
+                Score=result.score,
+                ContextData=result.path,
+            )
+        )
+    return send_results(flow_results)
+
+
+def _plugin_query_cd(query: str) -> ResultResponse:
+    zoxide_path = _get_zoxide_path()
+
+    if os.path.exists(query) and os.path.isdir(query):
+        return send_results(
+            [
+                Result(
+                    Title=query,
+                    SubTitle=f"Add this directory to zoxide and open it",
+                    IcoPath=FOLDER,
+                    JsonRPCAction={
+                        "method": "open_directory",
+                        "parameters": [query, zoxide_path],
+                    },
+                )
+            ]
+        )
+    else:
+        return send_results(
+            [
+                Result(
+                    Title=f"Invalid directory: {query}",
+                    SubTitle="Please provide a valid directory path",
+                    IcoPath=FOLDER,
+                )
+            ]
+        )
 
 
 if __name__ == "__main__":
