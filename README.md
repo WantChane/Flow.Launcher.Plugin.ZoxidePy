@@ -11,6 +11,7 @@ ZoxidePy is a Flow Launcher plugin that integrates with [Zoxide](https://github.
 - **Smart Directory Navigation**: Quickly jump to frequently used directories
 - **Contextual Search**: Search directories based on your usage patterns
 - **Context Menu**: Right-click for additional options like copying paths and removing directories
+- **Add & Open Directory (`z cd`)**: Instantly add a new directory to zoxide and open it
 
 ## Prerequisites
 
@@ -36,6 +37,10 @@ ZoxidePy is a Flow Launcher plugin that integrates with [Zoxide](https://github.
 ### Basic Search
 - Type `z` followed by a space and your search query
 - Example: `z documents` to find directories containing "documents"
+
+### Add & Open Directory (`z cd`)
+- Type `z cd` followed by a space and path
+- Example: `z cd D:\Projects\MyApp`
 
 ### Actions
 - **Enter**: Open the selected directory in File Explorer
