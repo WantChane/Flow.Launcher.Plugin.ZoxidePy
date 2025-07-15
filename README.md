@@ -2,6 +2,8 @@
 
 Zoxide integration for Flow Launcher, written in Python.
 
+> **Note:** This project is currently implemented in Python and may not be suitable for further expansion or advanced features. If you are interested in developing a more extensible or performant version, contributions in C# are highly encouraged! A C# implementation could better leverage Flow Launcher’s native capabilities and provide improved integration. Feel free to open an issue or start a new repository if you wish
+
 ## Description
 
 ZoxidePy is a Flow Launcher plugin that integrates with [Zoxide](https://github.com/ajeetdsouza/zoxide), a smarter cd command that learns your habits. This plugin allows you to quickly navigate to frequently used directories directly from Flow Launcher.
