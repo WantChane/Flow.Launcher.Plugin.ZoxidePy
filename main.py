@@ -9,7 +9,8 @@ import logging
 from pyflowlauncher import Plugin, Result, send_results
 from pyflowlauncher.result import ResultResponse
 from pyflowlauncher.api import copy_to_clipboard
-from pyflowlauncher.icons import FOLDER, COPY, RECYCLEBIN
+from pyflowlauncher.icons import FOLDER, COPY, RECYCLEBIN, ERROR
+from error import *
 
 plugindir = Path.absolute(Path(__file__).parent)
 paths = (".", "lib", "plugin")
@@ -34,9 +35,6 @@ plugin = Plugin()
 
 @plugin.on_method
 def query(query: str) -> ResultResponse:
-    if not query.strip():
-        return send_results([])
-
     if query.startswith("cd "):
         return _plugin_query_cd(query[3:].strip())
     else:
@@ -46,21 +44,15 @@ def query(query: str) -> ResultResponse:
 @plugin.on_method
 def open_directory(path: str, zoxide_path: str) -> None:
     if not os.path.exists(path):
-        logger.error(f"Path does not exist: {path}")
-        return
-    try:
-        os.startfile(path)
-        _zoxide_add(path, zoxide_path)
-    except Exception as e:
-        logger.error(f"Failed to open directory {path}: {e}")
+        raise DirectoryNotFound(path)
+
+    os.startfile(path)
+    _zoxide_add(path, zoxide_path)
 
 
 @plugin.on_method
 def delete_directory(path: str, zoxide_path: str) -> None:
-    try:
-        _zoxide_remove(path, zoxide_path)
-    except Exception as e:
-        logger.error(f"Failed to delete directory {path}: {e}")
+    _zoxide_remove(path, zoxide_path)
 
 
 @plugin.on_method
@@ -69,11 +61,22 @@ def context_menu(data: str) -> ResultResponse:
 
 
 def _get_zoxide_path() -> str:
-    return (
+    zoxide_path = (
         plugin.settings.get("zoxide_path", "zoxide.exe")
         if plugin.settings
         else "zoxide.exe"
     )
+    if not _is_executable_available(zoxide_path):
+        raise ZoxideNotFound(zoxide_path)
+    return zoxide_path
+
+
+def _is_executable_available(path: str) -> bool:
+    import shutil
+
+    if os.path.exists(path):
+        return True
+    return shutil.which(path) is not None
 
 
 def _context_menu_results(path: str):
@@ -97,107 +100,75 @@ def _context_menu_results(path: str):
 
 
 def _zoxide_query(query: str, zoxide_path: str) -> List[ZoxideResult]:
-    try:
-        query_parts = re.split(r"\s+", query.strip())
-        cmd = [zoxide_path, "query", "--list", "--score"] + query_parts
+    query_parts = re.split(r"\s+", query.strip())
+    cmd = [zoxide_path, "query", "--list", "--score"] + query_parts
 
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            env=os.environ.copy(),
-            creationflags=subprocess.CREATE_NO_WINDOW,
-        )
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=os.environ.copy(),
+        creationflags=subprocess.CREATE_NO_WINDOW,
+    )
 
-        if result.returncode != 0:
-            if result.stderr:
-                logger.error(
-                    "zoxide query failed with code %d: %s",
-                    result.returncode,
-                    result.stderr.strip(),
-                )
-            return []
+    if result.returncode != 0:
+        raise ZoxideQueryError(query, result.stderr.strip())
 
-        return _parse_zoxide_output(result.stdout)
-
-    except Exception as e:
-        logger.error("Exception in zoxide_query: %s", str(e))
-        return []
+    return _parse_zoxide_output(result.stdout)
 
 
 def _parse_zoxide_output(output: str) -> List[ZoxideResult]:
     paths = []
     for line in output.splitlines():
-        if line.strip():
-            parts = line.strip().split(" ", 1)
-            if len(parts) == 2:
-                try:
-                    score = int(float(parts[0]) * 10)
-                    path = parts[1]
-                    paths.append(ZoxideResult(path=path, score=score))
-                except ValueError:
-                    continue
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            score, path = line.strip().split(" ", 1)
+            score = int(float(score) * 10)
+            paths.append(ZoxideResult(path, score))
+        except (ValueError, IndexError) as e:
+            raise ZoxideResultParseError(line) from e
     return paths
 
 
 def _zoxide_add(path: str, zoxide_path: str) -> bool:
-    try:
-        cmd = [zoxide_path, "add", path.strip()]
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            env=os.environ.copy(),
-            creationflags=subprocess.CREATE_NO_WINDOW,
-        )
+    cmd = [zoxide_path, "add", path.strip()]
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=os.environ.copy(),
+        creationflags=subprocess.CREATE_NO_WINDOW,
+    )
 
-        if result.returncode != 0:
-            if result.stderr:
-                logger.error(
-                    "zoxide add failed with code %d: %s",
-                    result.returncode,
-                    result.stderr.strip(),
-                )
-            return False
-        return True
-
-    except Exception as e:
-        logger.error("Exception in zoxide_add: %s", str(e))
-        return False
+    if result.returncode != 0:
+        raise ZoxideAddError(path, result.stderr.strip())
+    return True
 
 
 def _zoxide_remove(path: str, zoxide_path: str) -> bool:
-    try:
-        cmd = [zoxide_path, "remove", path.strip()]
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            env=os.environ.copy(),
-            creationflags=subprocess.CREATE_NO_WINDOW,
-        )
+    cmd = [zoxide_path, "remove", path.strip()]
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=os.environ.copy(),
+        creationflags=subprocess.CREATE_NO_WINDOW,
+    )
 
-        if result.returncode != 0:
-            if result.stderr:
-                logger.error(
-                    "zoxide remove failed with code %d: %s",
-                    result.returncode,
-                    result.stderr.strip(),
-                )
-            return False
-        return True
-
-    except Exception as e:
-        logger.error("Exception in zoxide_remove: %s", str(e))
-        return False
+    if result.returncode != 0:
+        raise ZoxideRemoveError(path, result.stderr.strip())
+    return True
 
 
 def _plugin_query_open(query: str) -> ResultResponse:
     zoxide_path = _get_zoxide_path()
-
+    if not query.strip():
+        return send_results([])
     results = _zoxide_query(query, zoxide_path)
     if not results:
         return send_results([])
@@ -222,7 +193,8 @@ def _plugin_query_open(query: str) -> ResultResponse:
 
 def _plugin_query_cd(query: str) -> ResultResponse:
     zoxide_path = _get_zoxide_path()
-
+    if not query.strip():
+        return send_results([])
     if os.path.exists(query) and os.path.isdir(query):
         return send_results(
             [
