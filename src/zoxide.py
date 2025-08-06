@@ -5,11 +5,10 @@ import subprocess
 from typing import List
 
 from pyflowlauncher import Result, ResultResponse, send_results
-from pyflowlauncher.api import copy_to_clipboard
-from pyflowlauncher.icons import COPY, FOLDER, RECYCLEBIN
+from pyflowlauncher.api import copy_to_clipboard, open_url
+from pyflowlauncher.icons import COPY, FOLDER, RECYCLEBIN, WEB_SEARCH
 from src.error import (
     ZoxideAddError,
-    ZoxideNotFound,
     ZoxideQueryError,
     ZoxideRemoveError,
     ZoxideResultParseError,
@@ -32,7 +31,15 @@ class Zoxide:
         if os.path.exists(zoxide_path) or shutil.which(zoxide_path) is not None:
             return zoxide_path
         else:
-            raise ZoxideNotFound(zoxide_path)
+            return ""
+
+    def _get_zoxide_not_found_result(self) -> Result:
+        return Result(
+            Title="Zoxide not found",
+            SubTitle="Download and install zoxide",
+            IcoPath=WEB_SEARCH,
+            JsonRPCAction=open_url("https://github.com/ajeetdsouza/zoxide"),
+        )
 
     def zoxide_add(self, path: str) -> bool:
         cmd = [self.zoxide_path, "add", path.strip()]
@@ -116,6 +123,8 @@ class Zoxide:
         return results
 
     def cd(self, query: str) -> ResultResponse:
+        if not self.zoxide_path:
+            return send_results([self._get_zoxide_not_found_result()])
         if not query.strip():
             return send_results([])
 
@@ -145,6 +154,8 @@ class Zoxide:
             )
 
     def open(self, query: str) -> ResultResponse:
+        if not self.zoxide_path:
+            return send_results([self._get_zoxide_not_found_result()])
         if not query.strip():
             return send_results([])
 

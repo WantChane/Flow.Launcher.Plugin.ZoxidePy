@@ -33,7 +33,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r ./requirements.txt -t ./lib
-          zip -r Flow.Launcher.Plugin.ZoxidePy.zip . -x '*.git*'
+          zip -r Flow.Launcher.Plugin.ZoxidePy.zip . -x '*.git*' '*.venv*'
       - name: Publish
         if: success()
         uses: softprops/action-gh-release@v1
